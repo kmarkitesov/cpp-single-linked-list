@@ -66,7 +66,7 @@ class SingleLinkedList {
         // Оператор проверки итераторов на неравенство
         // Противоположен !=
         [[nodiscard]] bool operator!=(const BasicIterator<const Type>& rhs) const noexcept {
-            return node_ != rhs.node_;
+            return !(*this == rhs);
         }
 
         // Оператор сравнения итераторов (в роли второго аргумента итератор)
@@ -78,7 +78,7 @@ class SingleLinkedList {
         // Оператор проверки итераторов на неравенство
         // Противоположен !=
         [[nodiscard]] bool operator!=(const BasicIterator<Type>& rhs) const noexcept {
-            return node_ != rhs.node_;
+            return !(*this == rhs);
         }
 
         // Оператор прединкремента. После его вызова итератор указывает на следующий элемент списка
@@ -147,14 +147,14 @@ public:
     // Если список пустой, возвращённый итератор будет равен end()
     // Результат вызова эквивалентен вызову метода cbegin()
     [[nodiscard]] ConstIterator begin() const noexcept {
-        return ConstIterator(head_.next_node);
+        return cbegin();
     }
 
     // Возвращает константный итератор, указывающий на позицию, следующую за последним элементом односвязного списка
     // Разыменовывать этот итератор нельзя — попытка разыменования приведёт к неопределённому поведению
     // Результат вызова эквивалентен вызову метода cend()
     [[nodiscard]] ConstIterator end() const noexcept {
-        return ConstIterator(nullptr);
+        return cend();
     }
 
     // Возвращает константный итератор, ссылающийся на первый элемент
@@ -275,6 +275,8 @@ public:
      * Возвращает итератор на элемент, следующий за удалённым
      */
     Iterator EraseAfter(ConstIterator pos) noexcept {
+        assert(!IsEmpty());
+
         Node* current = pos.node_;
         assert(current != nullptr && current->next_node != nullptr);
 
@@ -314,19 +316,16 @@ void swap(SingleLinkedList<Type>& lhs, SingleLinkedList<Type>& rhs) noexcept {
 
 template <typename Type>
 bool operator==(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
+
+    if (&lhs == &rhs) {
+        return true;
+    }
+
     if (lhs.GetSize() != rhs.GetSize()) {
         return false;
     }
-    auto it1 = lhs.begin();
-    auto it2 = rhs.begin();
-    while (it1 != lhs.end()) {
-        if (*it1 != *it2) {
-            return false;
-        }
-        ++it1;
-        ++it2;
-    }
-    return true;
+
+    return std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 template <typename Type>
@@ -336,19 +335,7 @@ bool operator!=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>&
 
 template <typename Type>
 bool operator<(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
-    auto it1 = lhs.begin();
-    auto it2 = rhs.begin();
-    while (it1 != lhs.end() && it2 != rhs.end()) {
-        if (*it1 < *it2) {
-            return true;
-        }
-        if (*it1 > *it2) {
-            return false;
-        }
-        ++it1;
-        ++it2;
-    }
-    return lhs.GetSize() < rhs.GetSize();
+    return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
 template <typename Type>
